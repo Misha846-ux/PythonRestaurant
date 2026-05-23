@@ -1,0 +1,88 @@
+{% extends 'restaurant/layout.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <h2>Добавить ресторан</h2>
+
+    <form id="restaurantForm" method="POST">
+
+        <!-- Название -->
+        <div class="mb-3">
+            <label for="name" class="form-label">Название ресторана</label>
+            <input 
+                type="text" 
+                class="form-control" 
+                id="name" 
+                name="name"
+                required
+            >
+        </div>
+
+        <!-- Тип ресторана -->
+        <div class="mb-3">
+            <label for="restaurantTypes" class="form-label">
+                Типы ресторана
+            </label>
+
+            <select 
+                multiple 
+                class="form-select" 
+                id="restaurantTypes" 
+                name="restaurantTypes">
+                
+                {%for rType in rTypes%}
+                <option value={{rType.id}}>{{rType.typeName}}</option>
+                {%endfor%}
+            </select>
+
+            <small class="text-muted">
+                Зажми Ctrl (или Cmd на Mac) для выбора нескольких пунктов
+            </small>
+        </div>
+
+        <!-- Адрес -->
+        <div class="mb-3">
+            <label for="adress" class="form-label">Адрес</label>
+            <input 
+                type="text" 
+                class="form-control" 
+                id="adress" 
+                name="adress"
+                required
+            >
+        </div>
+
+        <!-- Телефон -->
+        <div class="mb-3">
+            <label for="phoneNumber" class="form-label">Телефон</label>
+            <input 
+                type="text" 
+                class="form-control" 
+                id="phoneNumber" 
+                name="phoneNumber"
+            >
+        </div>
+
+        <!-- Сайт -->
+        <div class="mb-3">
+            <label for="website" class="form-label">Сайт</label>
+            <input 
+                type="url" 
+                class="form-control" 
+                id="website" 
+                name="website"
+                required
+            >
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Добавить ресторан
+        </button>
+    </form>
+</div>
+
+<script src="{% static 'myapp/restaurant/addRestauran.js' %}"></script>
+
+{% endblock %}
