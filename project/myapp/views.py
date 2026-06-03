@@ -18,10 +18,15 @@ from django.shortcuts import render
 @csrf_exempt
 def restauranMain(request):
     if request.method == "GET":
-        restaurans = Restauran.objects.all()
+        restaurans = Restauran()
         selected_types = request.GET.getlist("restaurantTypes")
+
         if selected_types:
-            restaurans = restaurans.filter(restauranType__id__in=selected_types).distinct()
+            restaurans = Restauran.objects.filter(
+                restauranType__id__in=selected_types
+            ).distinct()
+        else:
+            restaurans = Restauran.objects.all()
         rTypes = RestauranTypes.objects.all()
 
         return render(request,"restaurant/main.html",
