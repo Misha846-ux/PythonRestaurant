@@ -1,7 +1,6 @@
 import json
-
-import json
 import time
+from datetime import datetime
 
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.forms import AuthenticationForm
@@ -10,7 +9,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import RestauranTypes, Restauran, RestauranPhotos, Review
+from .models import RestauranTypes, Restauran, RestauranPhotos, Review, Owner, Employee
 from .forms import RegistrationForm
 
 # Create your views here.
@@ -51,11 +50,13 @@ def editRestauran(request, id):
 
     if request.method == "GET":
         rTypes = RestauranTypes.objects.all()
+        owners = Owner.objects.all()
         return render(
             request,"restaurant/editRestauran.html",
             {
                 "restauran": restauran,
-                "rTypes": rTypes
+                "rTypes": rTypes,
+                "owners": owners,
             }
         )
 
@@ -67,6 +68,7 @@ def editRestauran(request, id):
         restauran.save()
 
         restauran.restauranType.set(request.POST.getlist("restauranType"))
+        restauran.owner_set.set(request.POST.getlist("owners"))
 
         files = request.FILES.getlist('images')
         for file in files:
@@ -79,7 +81,8 @@ def editRestauran(request, id):
 def addRestauran(request):
     if request.method == "GET":
         rTypes = RestauranTypes.objects.all()
-        return render(request, "restaurant/addRestauran.html", {"rTypes": rTypes})
+        owners = Owner.objects.all()
+        return render(request, "restaurant/addRestauran.html", {"rTypes": rTypes, "owners": owners})
     
     elif request.method == "POST":
         name: str = request.POST.get("name")
@@ -94,8 +97,8 @@ def addRestauran(request):
             website=website,
         )
         
-        for el in request.POST.getlist("restauranType"):
-            rst.restauranType.add(el)
+        rst.restauranType.set(request.POST.getlist("restauranType"))
+        rst.owner_set.set(request.POST.getlist("owners"))
 
         files = request.FILES.getlist('images')
         for file in files:
@@ -110,13 +113,15 @@ def page_not_found(request, exception):
 
 
 def restauran_detail(request, id):
-    restauran = Restauran.objects.get(id=id)
+    restauran = get_object_or_404(Restauran, id=id)
     photos = RestauranPhotos.objects.filter(restauran=restauran)
     reviews = Review.objects.filter(restauran=restauran, isVisible=True).order_by("-created_at")
+    employees = Employee.objects.filter(restaurant=restauran).order_by("surname", "name")
     return render(request, "restaurant/detail.html", {
         "restauran": restauran,
         "photos": photos,
-        "reviews": reviews
+        "reviews": reviews,
+        "employees": employees,
     })
 
 
@@ -136,6 +141,52 @@ def add_review(request, id):
         message = "Review added" if is_visible else "Review submitted and will be published after moderation"
         return JsonResponse({"message": message})
     return HttpResponseNotFound()
+
+
+@csrf_exempt
+def add_employee(request, id):
+    restauran = get_object_or_404(Restauran, id=id)
+    if request.method == "POST":
+        data = json.loads(request.body)
+        hiring_date = None
+        date_str = data.get("dateOfHiring")
+        if date_str:
+            try:
+                hiring_date = datetime.fromisoformat(date_str).date()
+            except ValueError:
+                hiring_date = None
+
+        employee = Employee.objects.create(
+            name=data.get("name", ""),
+            surname=data.get("surname", ""),
+            contactphone=data.get("contactphone", ""),
+            email=data.get("email", ""),
+            salary=int(data.get("salary") or 0),
+            dateOfHiring=hiring_date or datetime.now().date(),
+            restaurant=restauran,
+        )
+        return JsonResponse({"message": "Employee added", "employeeId": employee.id})
+    return HttpResponseNotFound()
+
+
+@csrf_exempt
+def delete_employee(request, restauran_id, employee_id):
+    if request.method == "DELETE":
+        employee = get_object_or_404(Employee, id=employee_id, restaurant__id=restauran_id)
+        employee.delete()
+        return JsonResponse({"message": "Employee deleted"})
+    return HttpResponseNotFound()
+
+
+def owners_list(request):
+    owners = Owner.objects.all().order_by("surname", "name")
+    return render(request, "restaurant/owners.html", {"owners": owners})
+
+
+def restaurant_employees(request, id):
+    restauran = get_object_or_404(Restauran, id=id)
+    employees = Employee.objects.filter(restaurant=restauran).order_by("surname", "name")
+    return render(request, "restaurant/employees.html", {"restauran": restauran, "employees": employees})
 
 
 def register_view(request):

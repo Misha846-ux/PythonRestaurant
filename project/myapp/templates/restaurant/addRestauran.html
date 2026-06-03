@@ -25,6 +25,16 @@
         </div>
 
         <div class="mb-3">
+            <label for="owners" class="form-label">Власники ресторану</label>
+            <select multiple class="form-select" id="owners" name="owners">
+                {% for owner in owners %}
+                <option value="{{ owner.id }}">{{ owner.name }} {{ owner.surname }} - {{ owner.contactphone }}</option>
+                {% endfor %}
+            </select>
+            <small class="text-muted">Зажми Ctrl (или Cmd на Mac) для выбора нескольких власників</small>
+        </div>
+
+        <div class="mb-3">
             <label for="adress" class="form-label">Адрес</label>
             <input type="text" class="form-control" id="adress" name="adress" required>
         </div>

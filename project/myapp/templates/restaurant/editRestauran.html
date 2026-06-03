@@ -27,6 +27,17 @@
         </div>
 
         <div class="mb-3">
+            <label class="form-label">Власники ресторану</label>
+            <select multiple class="form-select" name="owners">
+                {% for owner in owners %}
+                <option value="{{ owner.id }}" {% if owner in restauran.owner_set.all %}selected{% endif %}>
+                    {{ owner.name }} {{ owner.surname }} - {{ owner.contactphone }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
             <label class="form-label">Адрес</label>
             <input type="text" class="form-control" name="adress" value="{{ restauran.adress }}" required>
         </div>
