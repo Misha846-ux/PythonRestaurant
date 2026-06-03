@@ -7,107 +7,48 @@
 
     <h2>Изменить ресторан</h2>
 
-    <form id="restaurantForm">
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
 
         <div class="mb-3">
-
-            <label class="form-label">
-                Название
-            </label>
-
-            <input
-                type="text"
-                class="form-control"
-                id="name"
-                value="{{ restauran.name }}"
-            >
-
+            <label class="form-label">Название</label>
+            <input type="text" class="form-control" name="name" value="{{ restauran.name }}" required>
         </div>
 
         <div class="mb-3">
-
-            <label class="form-label">
-                Типы ресторана
-            </label>
-
-            <select
-                multiple
-                class="form-select"
-                id="restaurantTypes">
-
+            <label class="form-label">Типы ресторана</label>
+            <select multiple class="form-select" name="restauranType">
                 {% for rType in rTypes %}
-
-                <option
-                    value="{{ rType.id }}"
-                    {% if rType in restauran.restauranType.all %}
-                        selected
-                    {% endif %}
-                >
+                <option value="{{ rType.id }}" {% if rType in restauran.restauranType.all %}selected{% endif %}>
                     {{ rType.typeName }}
                 </option>
-
                 {% endfor %}
-
             </select>
-
         </div>
 
         <div class="mb-3">
-
-            <label class="form-label">
-                Адрес
-            </label>
-
-            <input
-                type="text"
-                class="form-control"
-                id="adress"
-                value="{{ restauran.adress }}"
-            >
-
+            <label class="form-label">Адрес</label>
+            <input type="text" class="form-control" name="adress" value="{{ restauran.adress }}" required>
         </div>
 
         <div class="mb-3">
-
-            <label class="form-label">
-                Телефон
-            </label>
-
-            <input
-                type="text"
-                class="form-control"
-                id="phoneNumber"
-                value="{{ restauran.phoneNumber }}"
-            >
-
+            <label class="form-label">Телефон</label>
+            <input type="text" class="form-control" name="phoneNumber" value="{{ restauran.phoneNumber }}">
         </div>
 
         <div class="mb-3">
-
-            <label class="form-label">
-                Сайт
-            </label>
-
-            <input
-                type="url"
-                class="form-control"
-                id="website"
-                value="{{ restauran.website }}"
-            >
-
+            <label class="form-label">Сайт</label>
+            <input type="url" class="form-control" name="website" value="{{ restauran.website }}" required>
         </div>
 
-        <button
-            type="submit"
-            class="btn btn-success"
-        >
-            Сохранить
-        </button>
+        <div class="mb-3">
+            <label class="form-label">Фотографии (добавить)</label>
+            <input type="file" id="images" name="images" multiple class="form-control" accept="image/*" />
+        </div>
 
+        <button type="submit" class="btn btn-success">Сохранить</button>
     </form>
 
 </div>
-
 <script src="{% static 'myapp/restaurant/editRestauran.js' %}"></script>
-
 {% endblock %}

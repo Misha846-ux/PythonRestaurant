@@ -25,10 +25,10 @@ class Review(models.Model):
         return f"{self.id} {self.review}"
 
 class RestauranPhotos(models.Model):
-    photoName = models.CharField(max_length=50, blank=False)
+    image = models.ImageField(upload_to='restauran_photos/')
     restauran = models.ForeignKey(Restauran, on_delete=models.CASCADE)
     def __str__(self) -> str:
-        return f"{self.id} {self.photoName}"
+        return f"{self.id} {self.image.name}"
 
 class Owner(models.Model):
     name = models.CharField(max_length=50, blank=False)

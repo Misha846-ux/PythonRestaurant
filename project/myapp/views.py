@@ -3,16 +3,17 @@ from django.http import HttpResponse, HttpResponseNotFound
 from typing import Dict, Union
 import json
 from urllib import request
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpRequest, JsonResponse
 from datetime import datetime
 
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
+from django.conf import settings
+import os
 
-from .models import RestauranTypes, Restauran
-from django.shortcuts import render
+from .models import RestauranTypes, Restauran, RestauranPhotos, Review
 
 # Create your views here.
 @csrf_exempt
@@ -48,13 +49,10 @@ def restauranMain(request):
 
 @csrf_exempt
 def editRestauran(request, id):
-
     restauran = Restauran.objects.get(id=id)
 
     if request.method == "GET":
-
         rTypes = RestauranTypes.objects.all()
-
         return render(
             request,
             "restaurant/editRestauran.html",
@@ -65,42 +63,76 @@ def editRestauran(request, id):
         )
 
     elif request.method == "POST":
-
-        body = json.loads(request.body)
-
-        restauran.name = body["name"]
-        restauran.adress = body["adress"]
-        restauran.phoneNumber = body["phoneNumber"]
-        restauran.website = body["website"]
-
+        restauran.name = request.POST.get("name")
+        restauran.adress = request.POST.get("adress")
+        restauran.phoneNumber = request.POST.get("phoneNumber", "")
+        restauran.website = request.POST.get("website")
         restauran.save()
 
-        restauran.restauranType.set(
-            body["restauranType"]
-        )
+        restauran.restauranType.set(request.POST.getlist("restauranType"))
 
-        return JsonResponse({
-            "message": "updated"
-        })
+        # handle uploaded photos
+        files = request.FILES.getlist('images')
+        for file in files:
+            if file:
+                RestauranPhotos.objects.create(image=file, restauran=restauran)
+
+        return redirect(f"/Restauran/{id}/")
 
 @csrf_exempt
 def addRestauran(request):
-    if(request.method == "GET"):
+    if request.method == "GET":
         rTypes = RestauranTypes.objects.all()
         return render(request, "restaurant/addRestauran.html", {"rTypes": rTypes})
-    elif (request.method == "POST"):
-        body = json.loads(request.body)
+    
+    elif request.method == "POST":
+        name = request.POST.get("name")
+        adress = request.POST.get("adress")
+        phoneNumber = request.POST.get("phoneNumber", "")
+        website = request.POST.get("website")
+        
         rst = Restauran.objects.create(
-            name = body.get("name"),
-            adress = body.get("adress"),
-            phoneNumber = body.get("phoneNumber"),
-            website = body.get("website"),
+            name=name,
+            adress=adress,
+            phoneNumber=phoneNumber,
+            website=website,
         )
-
-        for el in body.get("restauranType"):
+        
+        for el in request.POST.getlist("restauranType"):
             rst.restauranType.add(el)
-        return JsonResponse({"message": "Product created"})
+
+        # handle uploaded photos
+        files = request.FILES.getlist('images')
+        for file in files:
+            if file:
+                RestauranPhotos.objects.create(image=file, restauran=rst)
+
+        return redirect(f"/Restauran/{rst.id}/")
 
 
 def page_not_found(request, exception):
     return render(request, "notFound.html", {"title": "Page not found"})
+
+
+def restauran_detail(request, id):
+    restauran = get_object_or_404(Restauran, id=id)
+    photos = RestauranPhotos.objects.filter(restauran=restauran)
+    reviews = Review.objects.filter(restauran=restauran).order_by("-created_at")
+    return render(request, "restaurant/detail.html", {"restauran": restauran, "photos": photos, "reviews": reviews})
+
+
+@csrf_exempt
+def add_review(request, id):
+    restauran = Restauran.objects.get(id=id)
+    if request.method == "POST":
+        data = json.loads(request.body)
+        review_text = data.get("review")
+        if review_text and review_text.strip():
+            Review.objects.create(
+                review=review_text.strip(),
+                restauran=restauran
+            )
+        return JsonResponse({
+            "message": "review added"
+        })
+    return HttpResponseNotFound()

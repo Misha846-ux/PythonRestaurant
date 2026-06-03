@@ -50,7 +50,9 @@
 
         <tr>
 
-            <td>{{ restauran.name }}</td>
+            <td>
+                <a href="/Restauran/{{ restauran.id }}/">{{ restauran.name }}</a>
+            </td>
 
             <td>
                 {% for type in restauran.restauranType.all %}

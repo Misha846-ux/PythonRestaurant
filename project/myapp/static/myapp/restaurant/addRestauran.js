@@ -1,31 +1,26 @@
 const restaurantForm = document.getElementById("restaurantForm")
 
-restaurantForm.addEventListener("submit", (event) => {
+restaurantForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const name = document.getElementById("name").value;
-    const adress = document.getElementById("adress").value;
-    const phoneNumber = document.getElementById("phoneNumber").value;
-    const website = document.getElementById("website").value;
+    const form = document.getElementById("restaurantForm");
+    const fd = new FormData();
+    fd.append('name', document.getElementById('name').value);
+    fd.append('adress', document.getElementById('adress').value);
+    fd.append('phoneNumber', document.getElementById('phoneNumber').value);
+    fd.append('website', document.getElementById('website').value);
 
-    const select = document.getElementById("restaurantTypes");
+    const select = document.getElementById('restaurantTypes');
+    const selectedTypes = Array.from(select.selectedOptions).map(o => o.value);
+    selectedTypes.forEach(v => fd.append('restauranType', v));
 
-    const selectedTypes = Array.from(select.selectedOptions)
-        .map(option => option.value);
+    const photosInput = document.getElementById('photos');
+    if (photosInput && photosInput.files.length) {
+        Array.from(photosInput.files).forEach(f => fd.append('photos', f));
+    }
 
-    const formData = {
-      name: name,
-      adress: adress,
-       phoneNumber: phoneNumber,
-       website: website,
-       restauranType: selectedTypes
-    };
-
-    fetch("", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify(formData)
-    })
+    await fetch('', {
+        method: 'POST',
+        body: fd
+    });
+    window.location.href = '/Restauran';
 })
