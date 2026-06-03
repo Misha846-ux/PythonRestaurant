@@ -29,3 +29,23 @@ class RestauranPhotos(models.Model):
     restauran = models.ForeignKey(Restauran, on_delete=models.CASCADE)
     def __str__(self) -> str:
         return f"{self.id} {self.photoName}"
+
+class Owner(models.Model):
+    name = models.CharField(max_length=50, blank=False)
+    surname = models.CharField(max_length=50, blank=False)
+    contactphone = models.CharField(max_length=50, blank=False)
+    email = models.EmailField(max_length=50)
+    restaurants = models.ManyToManyField(Restauran)
+    def __str__(self) -> str:
+        return f"{self.id} {self.name}"
+
+class Employee(models.Model):
+    name = models.CharField(max_length=50, blank=False)
+    surname = models.CharField(max_length=50, blank=False)
+    contactphone = models.CharField(max_length=50, blank=False)
+    email = models.EmailField(max_length=50)
+    restaurant = models.ForeignKey(Restauran, on_delete=models.CASCADE)
+    salary = models.IntegerField(blank=False)
+    dateOfHiring = models.DateField(blank=False)
+    def __str__(self) -> str:
+        return f"{self.id} {self.name}"

@@ -21,6 +21,6 @@ from myapp.views import page_not_found
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('myapp.urls')),
+    path('', include('myapp.urls')),
 ]
 handler404 = page_not_found

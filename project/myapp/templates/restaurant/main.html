@@ -3,6 +3,110 @@
 
 {% block content %}
 
-<h2>Welcome!</h2>
+<h2>Welcome</h2>
+
+<form method="GET" class="mb-3">
+
+    <label for="restaurantTypes" class="form-label">
+        Поиск по типу ресторана
+    </label>
+
+    <select
+        multiple
+        class="form-select"
+        id="restaurantTypes"
+        name="restaurantTypes">
+
+        {% for rType in rTypes %}
+        <option value="{{ rType.id }}">
+            {{ rType.typeName }}
+        </option>
+        {% endfor %}
+
+    </select>
+
+    <br>
+
+    <button type="submit" class="btn btn-primary">
+        Найти
+    </button>
+
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Types</th>
+            <th>Adress</th>
+            <th>Delete</th>
+            <th>Edit</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+    {% for restauran in restaurans %}
+
+        <tr>
+
+            <td>{{ restauran.name }}</td>
+
+            <td>
+                {% for type in restauran.restauranType.all %}
+                    {{ type.typeName }}
+                    {% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </td>
+
+            <td>{{ restauran.adress }}</td>
+
+            <td>
+                <form class="deleteForm">
+
+                    <input
+                        type="hidden"
+                        name="id"
+                        value="{{ restauran.id }}"
+                    >
+
+                    <button
+                        type="submit"
+                        class="btn btn-danger"
+                    >
+                        Удалить
+                    </button>
+
+                </form>
+            </td>
+
+            <td>
+
+                <a
+                    href="/Restauran/edit/{{ restauran.id }}"
+                    class="btn btn-warning"
+                >
+                    Изменить
+                </a>
+
+            </td>
+
+        </tr>
+
+    {% empty %}
+
+        <tr>
+            <td colspan="5">
+                Рестораны не найдены
+            </td>
+        </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+<script src="{% static 'myapp/restaurant/main.js' %}"></script>
 
 {% endblock %}

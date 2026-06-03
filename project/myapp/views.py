@@ -15,8 +15,68 @@ from .models import RestauranTypes, Restauran
 from django.shortcuts import render
 
 # Create your views here.
+@csrf_exempt
 def restauranMain(request):
-    return render(request, "restaurant/main.html")
+    if request.method == "GET":
+        restaurans = Restauran.objects.all()
+        selected_types = request.GET.getlist("restaurantTypes")
+        if selected_types:
+            restaurans = restaurans.filter(restauranType__id__in=selected_types).distinct()
+        rTypes = RestauranTypes.objects.all()
+
+        return render(request,"restaurant/main.html",
+            {
+                "restaurans": restaurans,
+                "rTypes": rTypes
+            }
+        )
+
+    elif request.method == "DELETE":
+        data = json.loads(request.body)
+        restaurant_id = data.get("id")
+        restaurant = Restauran.objects.get(id=restaurant_id)
+        restaurant.delete()
+        return JsonResponse(
+            {"message": "Restaurant deleted"},
+            status=200
+        )
+
+@csrf_exempt
+def editRestauran(request, id):
+
+    restauran = Restauran.objects.get(id=id)
+
+    if request.method == "GET":
+
+        rTypes = RestauranTypes.objects.all()
+
+        return render(
+            request,
+            "restaurant/editRestauran.html",
+            {
+                "restauran": restauran,
+                "rTypes": rTypes
+            }
+        )
+
+    elif request.method == "POST":
+
+        body = json.loads(request.body)
+
+        restauran.name = body["name"]
+        restauran.adress = body["adress"]
+        restauran.phoneNumber = body["phoneNumber"]
+        restauran.website = body["website"]
+
+        restauran.save()
+
+        restauran.restauranType.set(
+            body["restauranType"]
+        )
+
+        return JsonResponse({
+            "message": "updated"
+        })
 
 @csrf_exempt
 def addRestauran(request):
@@ -33,7 +93,7 @@ def addRestauran(request):
         )
 
         for el in body.get("restauranType"):
-            rst.restauranType.add(RestauranTypes.objects.filter(id = el))
+            rst.restauranType.add(el)
         return JsonResponse({"message": "Product created"})
 
 
