@@ -1,19 +1,17 @@
-from django.core.checks import templates
-from django.http import HttpResponse, HttpResponseNotFound
-from typing import Dict, Union
 import json
-from urllib import request
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, HttpRequest, JsonResponse
-from datetime import datetime
 
-from django.template.loader import render_to_string
+import json
+import time
+
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.models import User
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Q
-from django.conf import settings
-import os
 
 from .models import RestauranTypes, Restauran, RestauranPhotos, Review
+from .forms import RegistrationForm
 
 # Create your views here.
 @csrf_exempt
@@ -49,13 +47,12 @@ def restauranMain(request):
 
 @csrf_exempt
 def editRestauran(request, id):
-    restauran = Restauran.objects.get(id=id)
+    restauran: Restauran = Restauran.objects.get(id=id)
 
     if request.method == "GET":
         rTypes = RestauranTypes.objects.all()
         return render(
-            request,
-            "restaurant/editRestauran.html",
+            request,"restaurant/editRestauran.html",
             {
                 "restauran": restauran,
                 "rTypes": rTypes
@@ -71,7 +68,6 @@ def editRestauran(request, id):
 
         restauran.restauranType.set(request.POST.getlist("restauranType"))
 
-        # handle uploaded photos
         files = request.FILES.getlist('images')
         for file in files:
             if file:
@@ -86,10 +82,10 @@ def addRestauran(request):
         return render(request, "restaurant/addRestauran.html", {"rTypes": rTypes})
     
     elif request.method == "POST":
-        name = request.POST.get("name")
-        adress = request.POST.get("adress")
-        phoneNumber = request.POST.get("phoneNumber", "")
-        website = request.POST.get("website")
+        name: str = request.POST.get("name")
+        adress: str = request.POST.get("adress")
+        phoneNumber: str = request.POST.get("phoneNumber", "")
+        website: str = request.POST.get("website")
         
         rst = Restauran.objects.create(
             name=name,
@@ -101,7 +97,6 @@ def addRestauran(request):
         for el in request.POST.getlist("restauranType"):
             rst.restauranType.add(el)
 
-        # handle uploaded photos
         files = request.FILES.getlist('images')
         for file in files:
             if file:
@@ -115,10 +110,14 @@ def page_not_found(request, exception):
 
 
 def restauran_detail(request, id):
-    restauran = get_object_or_404(Restauran, id=id)
+    restauran = Restauran.objects.get(id=id)
     photos = RestauranPhotos.objects.filter(restauran=restauran)
-    reviews = Review.objects.filter(restauran=restauran).order_by("-created_at")
-    return render(request, "restaurant/detail.html", {"restauran": restauran, "photos": photos, "reviews": reviews})
+    reviews = Review.objects.filter(restauran=restauran, isVisible=True).order_by("-created_at")
+    return render(request, "restaurant/detail.html", {
+        "restauran": restauran,
+        "photos": photos,
+        "reviews": reviews
+    })
 
 
 @csrf_exempt
@@ -126,13 +125,51 @@ def add_review(request, id):
     restauran = Restauran.objects.get(id=id)
     if request.method == "POST":
         data = json.loads(request.body)
-        review_text = data.get("review")
-        if review_text and review_text.strip():
-            Review.objects.create(
-                review=review_text.strip(),
-                restauran=restauran
-            )
-        return JsonResponse({
-            "message": "review added"
-        })
+        review_text = data.get("review", "")
+        is_visible = request.user.is_authenticated
+        Review.objects.create(
+            review=review_text,
+            restauran=restauran,
+            user=request.user if request.user.is_authenticated else None,
+            isVisible=is_visible
+        )
+        message = "Review added" if is_visible else "Review submitted and will be published after moderation"
+        return JsonResponse({"message": message})
     return HttpResponseNotFound()
+
+
+def register_view(request):
+    if request.method == "POST":
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get("username") or f"user_{int(time.time())}"
+            email = form.cleaned_data.get("email") or ""
+            password = form.cleaned_data.get("password") or None
+            original_username = username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{original_username}_{counter}"
+                counter += 1
+            user = User.objects.create_user(username=username, email=email, password=password)
+            auth_login(request, user)
+            return redirect("restauran_main")
+    else:
+        form = RegistrationForm()
+    return render(request, "restaurant/register.html", {"form": form})
+
+
+def login_view(request):
+    if request.method == "POST":
+        form = AuthenticationForm(request=request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            auth_login(request, user)
+            return redirect("restauran_main")
+    else:
+        form = AuthenticationForm()
+    return render(request, "restaurant/login.html", {"form": form})
+
+
+def logout_view(request):
+    auth_logout(request)
+    return redirect("restauran_main")

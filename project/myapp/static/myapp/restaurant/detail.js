@@ -21,7 +21,12 @@ document.getElementById("reviewForm").addEventListener("submit", async (e) => {
     );
 
     if (response.ok) {
+        const data = await response.json();
         document.getElementById("review").value = "";
+        alert(data.message);
         location.reload();
+    } else {
+        const data = await response.json();
+        alert(data.message || "Ошибка при отправке отзыва");
     }
 });

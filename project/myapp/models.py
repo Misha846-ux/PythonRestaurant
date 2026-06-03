@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # Create your models here.
 class RestauranTypes(models.Model):
@@ -20,9 +21,12 @@ class Review(models.Model):
     review = models.TextField(blank=False)
     created_at = models.DateField(auto_now=True)
     restauran = models.ForeignKey(Restauran, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     isVisible = models.BooleanField(default=True)
+
     def __str__(self) -> str:
-        return f"{self.id} {self.review}"
+        author = self.user.username if self.user else 'Anonymous'
+        return f"{self.id} ({author}) {self.review[:40]}"
 
 class RestauranPhotos(models.Model):
     image = models.ImageField(upload_to='restauran_photos/')
